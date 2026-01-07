@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#c0c0c0" />
+  <title>扫雷 Minesweeper（复古 Win98 风）</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#board">跳到棋盘</a>
+
+  <main class="app" aria-labelledby="appTitle">
+    <header class="window" role="region" aria-label="扫雷游戏窗口">
+      <div class="titlebar">
+        <div class="titlebar__left">
+          <span class="titlebar__icon" aria-hidden="true"></span>
+          <h1 id="appTitle" class="titlebar__title">Minesweeper</h1>
+        </div>
+        <div class="titlebar__right" aria-hidden="true">
+          <span class="titlebar__btn"></span>
+          <span class="titlebar__btn"></span>
+          <span class="titlebar__btn titlebar__btn--close"></span>
+        </div>
+      </div>
+
+      <div class="menubar" role="toolbar" aria-label="游戏设置">
+        <div class="menubar__group">
+          <label class="label" for="difficulty">难度</label>
+          <select id="difficulty" class="select" aria-label="选择难度">
+            <option value="beginner">初级 9×9 / 10雷</option>
+            <option value="intermediate">中级 16×16 / 40雷</option>
+            <option value="expert">高级 30×16 / 99雷</option>
+            <option value="custom">自定义…</option>
+          </select>
+
+          <button id="themeToggle" class="btn" type="button" aria-label="切换主题（Classic / Dark）">
+            主题：<span id="themeName">Classic</span>
+          </button>
+
+          <button id="soundToggle" class="btn" type="button" aria-label="开关音效">
+            音效：<span id="soundName">开</span>
+          </button>
+        </div>
+
+        <div class="menubar__group menubar__group--right">
+          <button id="helpBtn" class="btn" type="button" aria-label="打开玩法帮助">帮助</button>
+        </div>
+      </div>
+
+      <section class="panel" aria-label="计分板">
+        <div class="counter" aria-label="剩余雷数">
+          <div class="seg" id="minesCounter" aria-hidden="true"></div>
+          <div class="sr-only" id="minesCounterText" aria-live="polite"></div>
+        </div>
+
+        <button id="resetBtn" class="smiley" type="button" aria-label="重新开始">
+          <span class="smiley__face" aria-hidden="true"></span>
+        </button>
+
+        <div class="counter" aria-label="计时器">
+          <div class="seg" id="timeCounter" aria-hidden="true"></div>
+          <div class="sr-only" id="timeCounterText" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="mobile-actions" aria-label="手机操作栏">
+        <div class="segmented" role="tablist" aria-label="触屏操作模式">
+          <button class="segmented__btn" id="modeReveal" role="tab" aria-selected="true">翻开</button>
+          <button class="segmented__btn" id="modeFlag" role="tab" aria-selected="false">插旗</button>
+          <button class="segmented__btn" id="modeChord" role="tab" aria-selected="false">快速翻开</button>
+        </div>
+        <p class="hint" id="touchHint">提示：也支持<strong>长按插旗</strong>（避免误触）。</p>
+      </section>
+
+      <section class="board-wrap" aria-label="扫雷棋盘区域">
+        <div class="board-header">
+          <div class="status" id="statusText" aria-live="polite"></div>
+          <div class="kbd-hint" aria-hidden="true">键盘：方向键移动 / 空格翻开 / F 插旗 / Enter 快速翻开</div>
+        </div>
+
+        <div
+          id="board"
+          class="board"
+          role="grid"
+          aria-label="扫雷棋盘"
+          aria-describedby="touchHint"
+          tabindex="0"
+        ></div>
+      </section>
+    </header>
+
+    <footer class="footer">
+      <p>
+        复古扫雷 · 原生 JS · 可部署到 Render。
+        <a href="#" id="openAbout">关于与快捷键</a>
+      </p>
+    </footer>
+  </main>
+
+  <!-- 自定义难度对话框 -->
+  <dialog id="customDialog" class="dialog" aria-label="自定义难度设置">
+    <form method="dialog" class="dialog__content">
+      <h2 class="dialog__title">自定义难度</h2>
+      <p class="dialog__desc">请设置宽度、高度与雷数。会进行合理性校验（雷数必须小于格子数，并保留首次点击安全区域）。</p>
+
+      <div class="form-grid">
+        <label class="label" for="customW">宽（列）</label>
+        <input id="customW" class="input" type="number" min="5" max="40" value="16" />
+
+        <label class="label" for="customH">高（行）</label>
+        <input id="customH" class="input" type="number" min="5" max="30" value="16" />
+
+        <label class="label" for="customM">雷数</label>
+        <input id="customM" class="input" type="number" min="1" max="300" value="40" />
+      </div>
+
+      <div class="dialog__actions">
+        <button class="btn" value="cancel" type="submit">取消</button>
+        <button class="btn btn--primary" id="customApply" value="apply" type="submit">应用</button>
+      </div>
+
+      <p class="error" id="customError" role="alert" aria-live="assertive"></p>
+    </form>
+  </dialog>
+
+  <!-- 帮助/关于对话框 -->
+  <dialog id="helpDialog" class="dialog" aria-label="玩法帮助">
+    <form method="dialog" class="dialog__content dialog__content--wide">
+      <h2 class="dialog__title">玩法与操作</h2>
+
+      <div class="help">
+        <section>
+          <h3>桌面端（鼠标 + 键盘）</h3>
+          <ul>
+            <li><strong>左键</strong>：翻开格子</li>
+            <li><strong>右键</strong>：插旗 / 取消旗</li>
+            <li><strong>双击数字</strong>（或 <kbd>Enter</kbd>）：当周围旗子数量等于数字时，快速翻开周围未翻开的格子</li>
+            <li><strong>方向键</strong>：移动焦点；<strong>空格</strong>：翻开；<strong>F</strong>：插旗</li>
+          </ul>
+        </section>
+
+        <section>
+          <h3>手机端（触屏）</h3>
+          <ul>
+            <li>默认模式为<strong>翻开</strong>：点击格子即可翻开。</li>
+            <li>点击顶部的<strong>插旗</strong>模式：点格子插旗。</li>
+            <li>点击<strong>快速翻开</strong>模式：点数字格尝试快速翻开周围。</li>
+            <li>也支持<strong>长按插旗</strong>（更稳妥，避免误触）。</li>
+          </ul>
+        </section>
+
+        <section>
+          <h3>提示</h3>
+          <ul>
+            <li>首次点击<strong>必不踩雷</strong>，并尽量保证首次点击周围可展开。</li>
+            <li>剩余雷数 = 总雷数 - 已插旗数（不代表一定正确）。</li>
+            <li>可在系统设置中启用“减少动态效果”，本游戏会自动降低动画。</li>
+          </ul>
+        </section>
+      </div>
+
+      <div class="dialog__actions">
+        <button class="btn btn--primary" value="ok" type="submit">知道了</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 结算弹窗 -->
+  <dialog id="resultDialog" class="dialog" aria-label="游戏结果">
+    <form method="dialog" class="dialog__content">
+      <h2 class="dialog__title" id="resultTitle">胜利！</h2>
+      <p class="dialog__desc" id="resultDesc">你用时 00:00。</p>
+
+      <div class="result-anim" aria-hidden="true">
+        <div class="spark spark--1"></div>
+        <div class="spark spark--2"></div>
+        <div class="spark spark--3"></div>
+      </div>
+
+      <div class="dialog__actions">
+        <button class="btn" value="close" type="submit">关闭</button>
+        <button class="btn btn--primary" id="playAgain" value="again" type="submit">再来一局</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
