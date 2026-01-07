@@ -789,6 +789,116 @@ if (els.fullscreenBtns) {
       if (e.key === "Enter") { e.preventDefault(); chordAt(r, c); return; }
     });
 
+    
+
+// --- Fullscreen & Rules (robust wiring, avoids silent no-op) ---
+function setupExtrasFullscreenRules(){
+  // RULES
+  if (els.rulesBtn) {
+    els.rulesBtn.addEventListener("click", () => {
+      try{
+        if (els.rulesDialog && typeof els.rulesDialog.showModal === "function") {
+          els.rulesDialog.showModal();
+          setStatus("已打开规则说明。");
+        } else if (els.helpDialog && typeof els.helpDialog.showModal === "function") {
+          els.helpDialog.showModal();
+          setStatus("已打开帮助（规则弹窗不支持）。");
+        } else {
+          alert("规则：目标是翻开所有非雷格子；数字表示周围雷数；右键/长按插旗；数字格周围旗数=数字可快速翻开。");
+        }
+      }catch(_e){
+        // In case dialog blocked, fallback alert
+        alert("规则弹窗打开失败，请换浏览器或关闭拦截。");
+      }
+    });
+  }
+
+  // FULLSCREEN (native if possible, else pseudo fullscreen)
+  const fsBtns = els.fullscreenBtns ? Array.from(els.fullscreenBtns) : [];
+  if (!fsBtns.length) return;
+
+  let pseudo = false;
+
+  function isNativeFs(){
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+  function canNativeFs(){
+    const el = document.documentElement;
+    return !!(el.requestFullscreen || el.webkitRequestFullscreen);
+  }
+  function isFs(){
+    return pseudo || isNativeFs();
+  }
+  function setPseudo(on){
+    pseudo = !!on;
+    document.body.classList.toggle("pseudo-fullscreen", pseudo);
+  }
+
+  async function lockPortrait(){
+    try{
+      if (screen.orientation && screen.orientation.lock) await screen.orientation.lock("portrait");
+    }catch(_e){}
+  }
+  function updateBtns(){
+    const label = isFs() ? "退出全屏" : "全屏";
+    for (const b of fsBtns) {
+      b.disabled = false;
+      b.textContent = label;
+    }
+  }
+
+  async function enter(){
+    const el = document.documentElement;
+    if (canNativeFs()) {
+      try{
+        if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" });
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        setPseudo(false);
+      }catch(_e){
+        // common in in-app browsers -> fallback
+        setPseudo(true);
+      }
+    } else {
+      setPseudo(true);
+    }
+    await lockPortrait();
+    updateBtns();
+    setTimeout(() => renderBoard(), 120);
+  }
+
+  async function exit(){
+    try{
+      if (document.exitFullscreen && document.fullscreenElement) await document.exitFullscreen();
+      else if (document.webkitExitFullscreen && document.webkitFullscreenElement) document.webkitExitFullscreen();
+    }catch(_e){}
+    setPseudo(false);
+    updateBtns();
+    setTimeout(() => renderBoard(), 120);
+  }
+
+  async function toggle(){
+    await unlockAudio();
+    if (isFs()) {
+      await exit();
+      setStatus("已退出全屏。");
+    } else {
+      await enter();
+      setStatus(canNativeFs() ? "已进入全屏（将尽力锁定竖屏）。" : "已进入沉浸模式（不支持原生全屏的替代）。");
+      const wrap = document.querySelector(".board-wrap");
+      if (wrap && typeof wrap.scrollIntoView === "function") {
+        setTimeout(() => wrap.scrollIntoView({ behavior: "smooth", block: "start" }), 160);
+      }
+    }
+  }
+
+  // Bind
+  fsBtns.forEach((b) => b.addEventListener("click", toggle));
+  document.addEventListener("fullscreenchange", () => { updateBtns(); renderBoard(); });
+  document.addEventListener("webkitfullscreenchange", () => { updateBtns(); renderBoard(); });
+  updateBtns();
+}
+setupExtrasFullscreenRules();
+
     window.addEventListener("resize", () => { renderBoard(); });
 
     function autoScrollToBoardOnce(){
