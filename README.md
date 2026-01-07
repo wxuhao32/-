@@ -142,6 +142,20 @@ minesweeper-retro/
 
 ## 5) 常见问题排查（FAQ）
 
+### Q0：为什么我“解压后直接双击 index.html”只有文字、没有棋盘？
+这通常是因为：
+- 以前版本使用了 **绝对路径**（例如 `/js/app.js`、`/css/styles.css`），在 `file://` 打开时会变成 `file:///js/...`，导致脚本/样式加载失败；
+- 或使用了 ESModule（`type="module"`），部分浏览器在 `file://` 下会阻止模块导入。
+
+✅ 本修复版已做两点改动：
+- 资源路径全部改为 **相对路径**（`./js/...`、`./css/...`）
+- 不再依赖 ESModule 导入，改为普通 `<script>` 顺序加载
+
+所以你可以：
+- **直接双击 `public/index.html` 打开也能玩**（推荐用于快速预览）
+- 或按标准方式：`npm install && npm start`，再访问 `http://localhost:3000`
+
+
 ### Q1：Render 上打不开，提示端口错误？
 - Render 会注入 `PORT` 环境变量，服务必须 `listen(process.env.PORT)`。  
   ✅ 本项目已处理：`const PORT = process.env.PORT || 3000;`

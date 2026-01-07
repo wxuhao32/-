@@ -1,22 +1,28 @@
 /**
  * localStorage small helper (safe read/write)
+ * Global namespace: window.MSStorage
  */
-const KEY_PREFIX = "msw_ret";
+(function () {
+  "use strict";
+  const KEY_PREFIX = "msw_ret";
 
-export function save(key, value) {
-  try {
-    localStorage.setItem(`${KEY_PREFIX}:${key}`, JSON.stringify(value));
-  } catch {
-    // ignore
+  function save(key, value) {
+    try {
+      localStorage.setItem(`${KEY_PREFIX}:${key}`, JSON.stringify(value));
+    } catch {
+      // ignore
+    }
   }
-}
 
-export function load(key, fallback) {
-  try {
-    const raw = localStorage.getItem(`${KEY_PREFIX}:${key}`);
-    if (!raw) return fallback;
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
+  function load(key, fallback) {
+    try {
+      const raw = localStorage.getItem(`${KEY_PREFIX}:${key}`);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    } catch {
+      return fallback;
+    }
   }
-}
+
+  window.MSStorage = { save, load };
+})();

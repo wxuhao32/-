@@ -10,18 +10,20 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const publicDir = path.join(__dirname, "..", "public");
-app.use(express.static(publicDir, {
-  // 适度缓存：HTML 不缓存，静态资源可缓存
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith(".html")) {
-      res.setHeader("Cache-Control", "no-store");
-    } else {
-      res.setHeader("Cache-Control", "public, max-age=86400");
-    }
-  }
-}));
+app.use(
+  express.static(publicDir, {
+    // 适度缓存：HTML 不缓存，静态资源可缓存
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".html")) {
+        res.setHeader("Cache-Control", "no-store");
+      } else {
+        res.setHeader("Cache-Control", "public, max-age=86400");
+      }
+    },
+  })
+);
 
-// SPA/静态回退：任何未知路径都返回 index.html（方便后续扩展）
+// 静态回退：任何未知路径都返回 index.html（方便后续扩展）
 app.get("*", (req, res) => {
   res.sendFile(path.join(publicDir, "index.html"));
 });
