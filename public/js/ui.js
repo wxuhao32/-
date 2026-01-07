@@ -129,6 +129,8 @@
       customApply: document.getElementById("customApply"),
       helpDialog: document.getElementById("helpDialog"),
       helpBtn: document.getElementById("helpBtn"),
+      rulesDialog: document.getElementById("rulesDialog"),
+      rulesBtn: document.getElementById("rulesBtn"),
       resultDialog: document.getElementById("resultDialog"),
       resultTitle: document.getElementById("resultTitle"),
       resultDesc: document.getElementById("resultDesc"),
@@ -186,6 +188,124 @@
     };
 
     applyTouchModeUI(state.touchMode);
+
+// --- Collapsible panel (mobile-friendly) ---
+function applyCollapsedUI(){
+  const win = document.querySelector('.window');
+  if (!win) return;
+  win.classList.toggle('is-collapsed', !!state.collapsed);
+  if (els.collapseBtn) els.collapseBtn.textContent = state.collapsed ? '展开面板' : '折叠面板';
+}
+applyCollapsedUI();
+
+// --- Fullscreen (native if possible, otherwise pseudo fullscreen fallback) ---
+let pseudoFullscreen = false;
+
+function isNativeFullscreen(){
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+function canNativeFullscreen(){
+  const el = document.documentElement;
+  return !!(el.requestFullscreen || el.webkitRequestFullscreen);
+}
+function isAnyFullscreen(){
+  return pseudoFullscreen || isNativeFullscreen();
+}
+function setPseudoFullscreen(on){
+  pseudoFullscreen = !!on;
+  document.body.classList.toggle('pseudo-fullscreen', pseudoFullscreen);
+}
+
+async function tryLockPortrait(){
+  try{
+    if (screen.orientation && screen.orientation.lock) {
+      await screen.orientation.lock('portrait');
+    }
+  }catch(_e){}
+}
+async function tryUnlockOrientation(){
+  try{
+    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+  }catch(_e){}
+}
+
+function updateFullscreenBtns(){
+  const btns = els.fullscreenBtns ? Array.from(els.fullscreenBtns) : [];
+  if (!btns.length) return;
+
+  const label = isAnyFullscreen() ? "退出全屏" : "全屏";
+  for (const btn of btns) {
+    btn.disabled = false; // even without native fullscreen, pseudo is available
+    btn.textContent = label;
+    btn.title = canNativeFullscreen()
+      ? "进入/退出全屏（将尽力锁定竖屏）"
+      : "沉浸模式：浏览器不支持原生全屏时的替代方案";
+  }
+}
+
+async function enterFullscreen(){
+  // Try native fullscreen first (if supported), else fallback to pseudo fullscreen.
+  const el = document.documentElement;
+  if (canNativeFullscreen()) {
+    try{
+      if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" });
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      setPseudoFullscreen(false);
+    }catch(_e){
+      setPseudoFullscreen(true);
+    }
+  } else {
+    setPseudoFullscreen(true);
+  }
+
+  await tryLockPortrait();
+  setTimeout(() => renderBoard(), 120);
+}
+
+async function exitFullscreen(){
+  // Exit native fullscreen if active
+  try{
+    if (document.exitFullscreen && document.fullscreenElement) await document.exitFullscreen();
+    else if (document.webkitExitFullscreen && document.webkitFullscreenElement) document.webkitExitFullscreen();
+  }catch(_e){}
+  setPseudoFullscreen(false);
+  await tryUnlockOrientation();
+  setTimeout(() => renderBoard(), 120);
+}
+
+async function toggleFullscreen(){
+  await unlockAudio();
+  if (isAnyFullscreen()) {
+    await exitFullscreen();
+    setStatus("已退出全屏。");
+  } else {
+    await enterFullscreen();
+    setStatus(canNativeFullscreen() ? "已进入全屏（将尽力锁定竖屏）。" : "已进入沉浸模式（不支持原生全屏的替代）。");
+    const wrap = document.querySelector(".board-wrap");
+    if (wrap && typeof wrap.scrollIntoView === "function") {
+      setTimeout(() => wrap.scrollIntoView({ behavior: "smooth", block: "start" }), 160);
+    }
+  }
+  updateFullscreenBtns();
+}
+
+// Keep in sync on fullscreen change
+document.addEventListener("fullscreenchange", () => {
+  updateFullscreenBtns();
+  renderBoard();
+});
+document.addEventListener("webkitfullscreenchange", () => {
+  updateFullscreenBtns();
+  renderBoard();
+});
+
+// Bind buttons
+if (els.fullscreenBtns) {
+  Array.from(els.fullscreenBtns).forEach((btn) => {
+    btn.addEventListener("click", () => { toggleFullscreen(); });
+  });
+}
+updateFullscreenBtns();
 
     function applyConfig(cfg) {
       const safe = sanitizeCfg(cfg) || DIFFICULTIES.beginner;
@@ -521,11 +641,17 @@
       if (state.sound) SFX.win();
     });
 
-    function openHelp() {
+    function openRules(){
+      if (els.rulesDialog && typeof els.rulesDialog.showModal === 'function') els.rulesDialog.showModal();
+      else openHelp();
+    }
+
+function openHelp() {
       if (typeof els.helpDialog.showModal === "function") els.helpDialog.showModal();
       else alert("帮助：左键翻开，右键插旗，双击数字快速翻开。");
     }
     els.helpBtn.addEventListener("click", openHelp);
+    if (els.rulesBtn) els.rulesBtn.addEventListener('click', openRules);
     els.openAbout.addEventListener("click", (e) => { e.preventDefault(); openHelp(); });
 
     els.playAgain.addEventListener("click", () => {

@@ -46,6 +46,7 @@
 
         <div class="menubar__group menubar__group--right">
           <button id="fullscreenBtnTop" class="btn" type="button" data-fullscreen-btn aria-label="进入或退出全屏（优先竖屏）">全屏</button>
+          <button id="rulesBtn" class="btn" type="button" aria-label="打开详细规则">规则</button>
           <button id="helpBtn" class="btn" type="button" aria-label="打开玩法帮助">帮助</button>
         </div>
       </div>
@@ -135,6 +136,102 @@
       <p class="error" id="customError" role="alert" aria-live="assertive"></p>
     </form>
   </dialog>
+
+
+<!-- 详细规则对话框（内置到游戏中） -->
+<dialog id="rulesDialog" class="dialog" aria-label="扫雷详细规则">
+  <form method="dialog" class="dialog__content dialog__content--wide">
+    <h2 class="dialog__title">扫雷详细规则</h2>
+
+    <div class="rules">
+      <section>
+        <h3>目标</h3>
+        <p>在不踩到任何地雷（💣）的前提下，<strong>翻开所有非雷格子</strong> 即获胜。</p>
+      </section>
+
+      <section>
+        <h3>数字含义（最重要）</h3>
+        <p>翻开后显示的数字 <strong>1~8</strong> 表示：它周围 8 个相邻格（包含斜对角）里有多少个地雷。</p>
+        <ul>
+          <li>例如：数字 <strong>3</strong> 代表周围 8 格里有 3 个雷、5 个安全格。</li>
+          <li>数字为 <strong>0</strong> 的格子不会显示数字，并会自动连锁展开周围空白区域。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>插旗（🚩）</h3>
+        <ul>
+          <li>旗帜用于标记“你认为这里是雷”的格子。</li>
+          <li><strong>剩余雷数</strong> = 总雷数 - 你插的旗数量（只反映“还能插多少旗”，不代表一定正确）。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>操作方式</h3>
+        <div class="two-col">
+          <div>
+            <h4>电脑端</h4>
+            <ul>
+              <li><strong>左键</strong>：翻开</li>
+              <li><strong>右键</strong>：插旗/取消旗</li>
+              <li><strong>双击数字</strong>：快速翻开周围（见下）</li>
+              <li><strong>键盘</strong>：方向键移动；空格翻开；F 插旗；Enter 快速翻开</li>
+            </ul>
+          </div>
+          <div>
+            <h4>手机端</h4>
+            <ul>
+              <li>模式按钮：<strong>翻开 / 插旗 / 快速翻开</strong></li>
+              <li>或使用 <strong>长按</strong>（约 0.4 秒）来插旗</li>
+              <li>建议点 <strong>全屏</strong> 减少地址栏遮挡（部分浏览器不支持原生全屏时会使用“沉浸模式”替代）。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h3>快速翻开周围（Chord / Quick Open）</h3>
+        <p>当一个数字格周围你插的旗数量 <strong>刚好等于该数字</strong> 时，可以对它执行“快速翻开周围”。</p>
+        <ol>
+          <li>先插旗：把你确定是雷的格子标上 🚩</li>
+          <li>当周围旗子数量 == 数字时：</li>
+          <li>对该数字格执行快速翻开（电脑双击/Enter；手机切换到“快速翻开”模式点击）</li>
+          <li>系统会自动翻开周围所有“未翻开且未插旗”的格子</li>
+        </ol>
+        <p class="warn">⚠️ 如果旗子插错，快速翻开可能直接翻到雷导致失败。</p>
+      </section>
+
+      <section>
+        <h3>首次点击必不踩雷（本项目规则）</h3>
+        <ul>
+          <li>第一次翻开 <strong>绝不会是雷</strong>。</li>
+          <li>并尽量保证第一次点击周围 <strong>3×3 区域更安全</strong>，更容易开出一片空白。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>胜利与失败</h3>
+        <ul>
+          <li><strong>胜利</strong>：所有非雷格子都被翻开（不要求把所有雷插旗）。</li>
+          <li><strong>失败</strong>：翻开到任意一个雷（💣），踩中的格子显示 💥。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>新手推理技巧</h3>
+        <ul>
+          <li>从空白展开区域边缘开始推理，尽量减少“纯猜”。</li>
+          <li>当某数字周围未翻开格子数量 == 该数字 - 已插旗数量，则这些未翻开格都应是雷。</li>
+          <li>当某数字周围旗子数量 == 数字，则其余未翻开格都应安全（可快速翻开）。</li>
+        </ul>
+      </section>
+    </div>
+
+    <div class="dialog__actions">
+      <button class="btn btn--primary" value="ok" type="submit">知道了</button>
+    </div>
+  </form>
+</dialog>
 
   <!-- 帮助/关于对话框 -->
   <dialog id="helpDialog" class="dialog" aria-label="玩法帮助">
