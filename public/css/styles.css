@@ -648,7 +648,8 @@ kbd{
   .panel{ grid-template-columns: 1fr auto 1fr; }
   .kbd-hint{ display:none; }
   .mobile-actions{ display:block; }
-  :root{ --cell-size: 26px; }
+  .mobile-tools{ display:flex; }
+  :root{ --cell-size: 30px; }
 }
 
 @media (max-width: 420px){
@@ -677,4 +678,55 @@ kbd{
   clip:rect(0,0,0,0) !important;
   white-space:nowrap !important;
   border:0 !important;
+}
+
+
+/* --- Mobile helper tools --- */
+.mobile-tools{
+  display: none;
+  margin-top: 8px;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.range{
+  flex: 1;
+  min-width: 140px;
+}
+
+/* Board tip (helps first-time mobile users find the board) */
+.board-tip{
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  border-top: 2px solid var(--border-mid);
+  border-left: 2px solid var(--border-mid);
+  border-right: 2px solid var(--border-dark);
+  border-bottom: 2px solid var(--border-dark);
+  background: rgba(255,255,255,.25);
+}
+[data-theme="dark"] .board-tip{
+  background: rgba(0,0,0,.25);
+}
+
+/* Make board more visually obvious on mobile */
+.board{
+  background-image:
+    linear-gradient(rgba(0,0,0,.04), rgba(0,0,0,.04)),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.03), rgba(0,0,0,.03) 1px, transparent 1px, transparent 8px);
+}
+[data-theme="dark"] .board{
+  background-image:
+    linear-gradient(rgba(255,255,255,.04), rgba(255,255,255,.04)),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.03), rgba(255,255,255,.03) 1px, transparent 1px, transparent 8px);
+}
+
+/* Collapsible top panel on small screens */
+.window.is-collapsed .menubar,
+.window.is-collapsed .panel{
+  display: none;
+}
+.window.is-collapsed .mobile-actions{
+  margin-top: 8px;
 }

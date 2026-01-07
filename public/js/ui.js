@@ -93,6 +93,20 @@
     els.soundName.textContent = enabled ? "开" : "关";
   }
 
+  function sanitizeCfg(cfg){
+    if (!cfg) return null;
+    const rows = Number(cfg.rows);
+    const cols = Number(cfg.cols);
+    const mines = Number(cfg.mines);
+    if (![rows, cols, mines].every(Number.isFinite)) return null;
+    if (rows < 5 || rows > 30) return null;
+    if (cols < 5 || cols > 40) return null;
+    const cells = rows * cols;
+    const reserve = Math.min(9, cells - 1);
+    if (mines < 1 || mines > cells - reserve) return null;
+    return { ...cfg, rows, cols, mines };
+  }
+
   function createUI() {
     const els = {
       board: document.getElementById("board"),
@@ -123,6 +137,10 @@
       modeReveal: document.getElementById("modeReveal"),
       modeFlag: document.getElementById("modeFlag"),
       modeChord: document.getElementById("modeChord"),
+      zoomRange: document.getElementById("zoomRange"),
+      fitBtn: document.getElementById("fitBtn"),
+      collapseBtn: document.getElementById("collapseBtn"),
+      boardTip: document.getElementById("boardTip"),
     };
 
     buildSevenSeg(els.minesCounter);
@@ -133,6 +151,8 @@
 
     const soundEnabled = load("sound", true);
     setSound(soundEnabled, els);
+
+    const cellSizePref = load("cellSize", null); // number or null (auto)
 
     const storedLevel = load("difficulty", "beginner");
     if (storedLevel && DIFFICULTIES[storedLevel]) els.difficulty.value = storedLevel;
@@ -160,15 +180,18 @@
       sound: soundEnabled,
       touchMode: touchModeLoaded,
       focus: { r: 0, c: 0 },
+      cellSizeOverride: (typeof cellSizePref === "number" ? cellSizePref : null),
+      collapsed: load("collapsed", false),
     };
 
     applyTouchModeUI(state.touchMode);
 
     function applyConfig(cfg) {
-      state.cfg = cfg;
-      state.rows = cfg.rows;
-      state.cols = cfg.cols;
-      state.mines = cfg.mines;
+      const safe = sanitizeCfg(cfg) || DIFFICULTIES.beginner;
+      state.cfg = safe;
+      state.rows = safe.rows;
+      state.cols = safe.cols;
+      state.mines = safe.mines;
       newGame();
     }
 
@@ -206,6 +229,10 @@
     }
 
     function setStatus(text) { els.statusText.textContent = text; }
+
+    function hideBoardTip(){
+      if (els.boardTip) els.boardTip.style.display = 'none';
+    }
 
     function setFace(face) {
       els.resetBtn.dataset.face = face;
@@ -245,10 +272,17 @@
       const b = els.board;
       b.style.setProperty("--cols", String(state.cols));
 
-      const maxCell = isTouchPrimary() ? 30 : 32;
-      const minCell = isTouchPrimary() ? 20 : 22;
-      const cellSize = clamp(Math.floor((Math.min(window.innerWidth, 960) - 80) / state.cols), minCell, maxCell);
+            // --- Cell size: mobile-first + user adjustable
+      const touch = isTouchPrimary();
+      const padding = touch ? 36 : 80;
+      const available = Math.min(window.innerWidth, 960) - padding;
+      // Fit-to-screen size
+      const fitMax = touch ? 44 : 32;
+      const fitMin = touch ? 18 : 22;
+      const fitSize = clamp(Math.floor(available / state.cols), fitMin, fitMax);
+      const cellSize = (state.cellSizeOverride ? clamp(state.cellSizeOverride, fitMin, fitMax) : fitSize);
       document.documentElement.style.setProperty("--cell-size", `${cellSize}px`);
+
 
       const frag = document.createDocumentFragment();
       b.innerHTML = "";
@@ -303,6 +337,7 @@
       updateCounters();
       setFace("smile");
       setStatus("准备就绪：首次点击必不踩雷。");
+      if (els.boardTip) els.boardTip.style.display = '';
       renderBoard();
       stopTimer();
       state.focus = { r: 0, c: 0 };
@@ -354,6 +389,7 @@
     }
 
     function openAt(r, c) {
+      hideBoardTip();
       if (state.status === GameStatus.LOST || state.status === GameStatus.WON) return;
       ensureMinesPlaced(r, c);
 
@@ -374,6 +410,7 @@
     }
 
     function flagAt(r, c) {
+      hideBoardTip();
       if (state.status === GameStatus.LOST || state.status === GameStatus.WON) return;
       const cell = state.grid[r][c];
       if (cell.open) return;
@@ -387,6 +424,7 @@
     }
 
     function chordAt(r, c) {
+      hideBoardTip();
       if (state.status !== GameStatus.RUNNING) return;
       const res = chordOpen(state.grid, r, c);
       if (!res.did) return;
@@ -505,6 +543,31 @@
     els.modeFlag.addEventListener("click", () => setTouchMode("flag"));
     els.modeChord.addEventListener("click", () => setTouchMode("chord"));
 
+    // Mobile: zoom slider + fit + collapse
+    if (els.zoomRange) {
+      els.zoomRange.addEventListener('input', () => {
+        const v = Number(els.zoomRange.value);
+        state.cellSizeOverride = Number.isFinite(v) ? v : null;
+        save('cellSize', state.cellSizeOverride);
+        renderBoard();
+      });
+    }
+    if (els.fitBtn) {
+      els.fitBtn.addEventListener('click', () => {
+        state.cellSizeOverride = null;
+        save('cellSize', null);
+        if (els.zoomRange) els.zoomRange.value = '30';
+        renderBoard();
+      });
+    }
+    if (els.collapseBtn) {
+      els.collapseBtn.addEventListener('click', () => {
+        state.collapsed = !state.collapsed;
+        save('collapsed', state.collapsed);
+        applyCollapsedUI();
+      });
+    }
+
     let lastTap = { t: 0, r: -1, c: -1 };
     let longPressTimer = null;
     let longPressTriggered = false;
@@ -592,7 +655,19 @@
 
     window.addEventListener("resize", () => { renderBoard(); });
 
+    function autoScrollToBoardOnce(){
+      if (!isTouchPrimary()) return;
+      const done = load('autoScrolled', false);
+      if (done) return;
+      const wrap = document.querySelector('.board-wrap');
+      if (wrap && typeof wrap.scrollIntoView === 'function') {
+        setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250);
+        save('autoScrolled', true);
+      }
+    }
+
     newGame();
+    autoScrollToBoardOnce();
     return { state, newGame, applyConfig };
   }
 

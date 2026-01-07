@@ -72,9 +72,18 @@
           <button class="segmented__btn" id="modeChord" role="tab" aria-selected="false">快速翻开</button>
         </div>
         <p class="hint" id="touchHint">提示：也支持<strong>长按插旗</strong>（避免误触）。</p>
+        <div class="mobile-tools" aria-label="手机辅助工具">
+          <label class="label" for="zoomRange">格子大小</label>
+          <input id="zoomRange" class="range" type="range" min="16" max="44" step="1" value="28" aria-label="调整格子大小" />
+          <button id="fitBtn" class="btn" type="button" aria-label="一键适配屏幕">适配</button>
+          <button id="collapseBtn" class="btn" type="button" aria-label="折叠或展开上方面板">折叠面板</button>
+        </div>
       </section>
 
       <section class="board-wrap" aria-label="扫雷棋盘区域">
+        <div id="boardTip" class="board-tip" role="note" aria-live="polite">
+          <strong>👇 点击棋盘开始</strong>（长按插旗；上方可切换“插旗/快速翻开”）
+        </div>
         <div class="board-header">
           <div class="status" id="statusText" aria-live="polite"></div>
           <div class="kbd-hint" aria-hidden="true">键盘：方向键移动 / 空格翻开 / F 插旗 / Enter 快速翻开</div>
