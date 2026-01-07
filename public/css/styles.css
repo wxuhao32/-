@@ -773,3 +773,13 @@ kbd{
 :fullscreen .window.is-collapsed .board{
   max-height: calc(100vh - 130px);
 }
+
+
+/* Emoji icons (bomb/explosion) */
+.cell.emoji{
+  font-size: calc(var(--cell-size) * 0.70);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

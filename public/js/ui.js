@@ -139,7 +139,7 @@
       modeChord: document.getElementById("modeChord"),
       zoomRange: document.getElementById("zoomRange"),
       fitBtn: document.getElementById("fitBtn"),
-      fullscreenBtn: document.getElementById("fullscreenBtn"),
+      fullscreenBtns: document.querySelectorAll("[data-fullscreen-btn]"),
       collapseBtn: document.getElementById("collapseBtn"),
       boardTip: document.getElementById("boardTip"),
     };
@@ -304,9 +304,9 @@
 
           if (cell.open) {
             if (cell.mine) {
-              const icon = document.createElement("span");
-              icon.className = "icon icon-mine mine-burst";
-              btn.appendChild(icon);
+              // Use emoji bomb (no external assets)
+              btn.classList.add('emoji');
+              btn.textContent = (boomAt && boomAt[0] === r && boomAt[1] === c) ? '💥' : '💣';
             } else if (cell.num > 0) {
               btn.textContent = String(cell.num);
               btn.dataset.num = String(cell.num);
@@ -563,9 +563,11 @@
     }
 
 
-if (els.fullscreenBtn) {
-  els.fullscreenBtn.addEventListener('click', () => {
-    toggleFullscreen();
+if (els.fullscreenBtns) {
+  Array.from(els.fullscreenBtns).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      toggleFullscreen();
+    });
   });
 }
     if (els.collapseBtn) {
