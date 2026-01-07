@@ -268,6 +268,14 @@
       return `${base}：未翻开`;
     }
 
+    function debugPing(){
+      const dbg = document.getElementById('debugText');
+      const bar = document.getElementById('debugBar');
+      if (!dbg || !bar) return;
+      const count = els.board ? els.board.children.length : 0;
+      dbg.textContent = `rows=${state.rows} cols=${state.cols} cells=${count} status=${state.status}`;
+    }
+
     function renderBoard({ boomAt = null } = {}) {
       const b = els.board;
       b.style.setProperty("--cols", String(state.cols));
@@ -325,6 +333,7 @@
 
       b.appendChild(frag);
       applyRovingTabindex();
+      debugPing();
     }
 
     function newGame() {

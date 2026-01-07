@@ -9,6 +9,22 @@
   <link rel="stylesheet" href="./css/styles.css" />
 </head>
 <body>
+  <noscript>
+    <div style="padding:12px;background:#fff3cd;border:2px solid #b8860b;margin:12px;">
+      需要启用 JavaScript 才能运行扫雷游戏。
+    </div>
+  </noscript>
+  <div id="bootOverlay" class="boot" role="status" aria-live="polite">
+    <div class="boot__box">
+      <div class="boot__title">正在加载扫雷…</div>
+      <div class="boot__desc">如果一直停留在这里，请点右上角刷新；或点“清空设置”。</div>
+      <div class="boot__actions">
+        <button class="btn" id="bootClear" type="button">清空设置</button>
+        <button class="btn btn--primary" id="bootReload" type="button">刷新</button>
+      </div>
+      <div class="boot__small">提示：在部分内置浏览器里可能需要允许脚本/关闭省流模式。</div>
+    </div>
+  </div>
   <a class="skip-link" href="#board">跳到棋盘</a>
 
   <main class="app" aria-labelledby="appTitle">
@@ -106,6 +122,10 @@
         <a href="#" id="openAbout">关于与快捷键</a>
       </p>
     </footer>
+  <div id="debugBar" class="debug" hidden>
+    <span id="debugText">debug</span>
+    <button id="debugClear" class="btn" type="button">清空设置</button>
+  </div>
   </main>
 
   <!-- 自定义难度对话框 -->

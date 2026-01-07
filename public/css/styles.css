@@ -374,8 +374,10 @@ a:hover{ text-decoration: none; }
   grid-template-columns: repeat(var(--cols), var(--cell-size));
   grid-auto-rows: var(--cell-size);
   gap: var(--board-gap);
-  width: fit-content;
+  width: 100%;
+  justify-content: start;
   max-width: 100%;
+  min-height: calc(var(--cell-size) * 6);
   overflow: auto;
   padding: 4px;
   background: var(--panel);
@@ -729,4 +731,54 @@ kbd{
 }
 .window.is-collapsed .mobile-actions{
   margin-top: 8px;
+}
+
+
+/* --- Boot overlay (shows if JS fails) --- */
+.boot{
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,.35);
+  z-index: 9999;
+  padding: 16px;
+}
+.boot[hidden]{ display:none; }
+.boot__box{
+  width: min(520px, 100%);
+  background: var(--panel);
+  border-top: 2px solid var(--border-light);
+  border-left: 2px solid var(--border-light);
+  border-right: 2px solid var(--border-darker);
+  border-bottom: 2px solid var(--border-darker);
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+.boot__title{ font-weight: 800; margin-bottom: 6px; }
+.boot__desc{ font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.boot__actions{ display:flex; gap:8px; flex-wrap: wrap; }
+.boot__small{ margin-top: 10px; font-size: 12px; color: var(--muted); }
+
+.debug{
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding: 8px;
+  background: rgba(0,0,0,.12);
+  border-top: 2px solid var(--border-light);
+  border-left: 2px solid var(--border-light);
+  border-right: 2px solid var(--border-darker);
+  border-bottom: 2px solid var(--border-darker);
+  z-index: 9998;
+}
+.debug span{ flex:1; font-size:12px; color: var(--muted); overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 720px){
+  .board-wrap{ margin: 8px; padding: 10px; }
+  .board{ max-height: 62vh; }
 }
