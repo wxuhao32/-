@@ -93,6 +93,23 @@
     els.soundName.textContent = enabled ? "开" : "关";
   }
 
+
+// Background music (user-provided MP3)
+function ensureMusicAudio(){
+  if (ensureMusicAudio._audio) return ensureMusicAudio._audio;
+  const a = new Audio("./audio/嗜好.mp3");
+  a.loop = true;
+  a.preload = "auto";
+  a.volume = 0.5;
+  a.addEventListener("error", () => {
+    // Missing file or blocked by the browser. Disable music quietly.
+    try{ window.MSStorage && window.MSStorage.save && window.MSStorage.save("music", false); }catch(_e){}
+  });
+  ensureMusicAudio._audio = a;
+  return a;
+}
+ensureMusicAudio._audio = null;
+
   function sanitizeCfg(cfg){
     if (!cfg) return null;
     const rows = Number(cfg.rows);
@@ -121,6 +138,8 @@
       themeName: document.getElementById("themeName"),
       soundToggle: document.getElementById("soundToggle"),
       soundName: document.getElementById("soundName"),
+      musicToggle: document.getElementById("musicToggle"),
+      musicName: document.getElementById("musicName"),
       customDialog: document.getElementById("customDialog"),
       customW: document.getElementById("customW"),
       customH: document.getElementById("customH"),
@@ -155,6 +174,12 @@
     const soundEnabled = load("sound", true);
     setSound(soundEnabled, els);
 
+    const musicEnabled = load("music", false);
+    function setMusic(enabled){
+      if (els.musicName) els.musicName.textContent = enabled ? "开" : "关";
+    }
+    setMusic(musicEnabled);
+
     const cellSizePref = load("cellSize", null); // number or null (auto)
 
     const storedLevel = load("difficulty", "beginner");
@@ -181,6 +206,7 @@
       timer: 0,
       timerId: null,
       sound: soundEnabled,
+      music: musicEnabled,
       touchMode: touchModeLoaded,
       focus: { r: 0, c: 0 },
       cellSizeOverride: (typeof cellSizePref === "number" ? cellSizePref : null),
@@ -350,6 +376,26 @@ updateFullscreenBtns();
     }
 
     function setStatus(text) { els.statusText.textContent = text; }
+
+    function updateMusicUI(){
+      if (!els.musicName) return;
+      els.musicName.textContent = state.music ? '开' : '关';
+    }
+    updateMusicUI();
+
+    async function startMusicIfNeeded(){
+      if (!state.music) return;
+      const a = ensureMusicAudio();
+      try{
+        if (a.paused) await a.play();
+      }catch(_e){
+        setStatus('音乐已开启：若无声，请点一下棋盘/按钮（浏览器需要手势才能播放）。');
+      }
+    }
+    function stopMusic(){
+      const a = ensureMusicAudio();
+      try{ a.pause(); a.currentTime = 0; }catch(_e){}
+    }
 
     function hideBoardTip(){
       if (els.boardTip) els.boardTip.style.display = 'none';
@@ -616,6 +662,7 @@ updateFullscreenBtns();
 
     els.resetBtn.addEventListener("click", async () => {
       await unlockAudio();
+      await startMusicIfNeeded();
       newGame();
     });
 
@@ -640,6 +687,23 @@ updateFullscreenBtns();
       save("sound", state.sound);
       if (state.sound) SFX.win();
     });
+
+
+// Music toggle (background music)
+if (els.musicToggle) {
+  els.musicToggle.addEventListener("click", async () => {
+    await unlockAudio();
+    state.music = !state.music;
+    save("music", state.music);
+    updateMusicUI();
+    if (state.music) {
+      await startMusicIfNeeded();
+    } else {
+      stopMusic();
+      setStatus("音乐已关闭。");
+    }
+  });
+}
 
     function openRules(){
       if (els.rulesDialog && typeof els.rulesDialog.showModal === 'function') els.rulesDialog.showModal();
