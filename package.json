@@ -1,16 +1,16 @@
 {
   "name": "minesweeper-retro",
   "version": "1.0.9",
-  "description": "Retro Windows 98/XP style Minesweeper web game (vanilla JS) served by Node.js + Express.",
+  "description": "Retro Windows-style Minesweeper game with fullscreen, music, and mobile support",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": "18.x"
   },
   "dependencies": {
     "express": "^4.19.2"
-  },
-  "license": "MIT"
+  }
 }
+
