@@ -976,7 +976,39 @@ setupExtrasFullscreenRules();
       }
     }
 
-    newGame();
+    
+
+// --- DEFENSIVE_REBIND: ensure fullscreen & music buttons always respond ---
+// Some browsers can keep old JS in cache; we also guard against duplicate binding.
+(function ensureCriticalButtons(){
+  // Fullscreen buttons
+  const fsBtns = document.querySelectorAll('[data-fullscreen-btn]');
+  fsBtns.forEach((btn) => {
+    if (btn.dataset.boundFullscreen === "1") return;
+    btn.dataset.boundFullscreen = "1";
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      try { toggleFullscreen(); } catch (_e) { /* ignore */ }
+    });
+  });
+
+  // Music button
+  if (els.musicToggle && els.musicToggle.dataset.boundMusic !== "1") {
+    els.musicToggle.dataset.boundMusic = "1";
+    els.musicToggle.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try{
+        await unlockAudio();
+        state.music = !state.music;
+        save("music", state.music);
+        updateMusicUI();
+        if (state.music) await startMusicIfNeeded();
+        else { stopMusic(); setStatus("音乐已关闭。"); }
+      }catch(_e){}
+    });
+  }
+})();
+newGame();
     autoScrollToBoardOnce();
     return { state, newGame, applyConfig };
   }
