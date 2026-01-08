@@ -325,10 +325,16 @@ document.addEventListener("webkitfullscreenchange", () => {
   renderBoard();
 });
 
-// Bind buttons
+
+// Bind buttons (avoid duplicate binding)
 if (els.fullscreenBtns) {
   Array.from(els.fullscreenBtns).forEach((btn) => {
-    btn.addEventListener("click", () => { toggleFullscreen(); });
+    if (btn.dataset.boundFullscreen === "1") return;
+    btn.dataset.boundFullscreen = "1";
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      toggleFullscreen();
+    });
   });
 }
 updateFullscreenBtns();
@@ -378,8 +384,8 @@ updateFullscreenBtns();
     function setStatus(text) { els.statusText.textContent = text; }
 
     function updateMusicUI(){
-      if (!els.musicName) return;
-      els.musicName.textContent = state.music ? '开' : '关';
+      if (els.musicName) els.musicName.textContent = state.music ? '开' : '关';
+      if (els.musicToggle) els.musicToggle.setAttribute('aria-pressed', state.music ? 'true' : 'false');
     }
     updateMusicUI();
 
@@ -688,21 +694,29 @@ updateFullscreenBtns();
       if (state.sound) SFX.win();
     });
 
-
 // Music toggle (background music)
 if (els.musicToggle) {
-  els.musicToggle.addEventListener("click", async () => {
-    await unlockAudio();
-    state.music = !state.music;
-    save("music", state.music);
-    updateMusicUI();
-    if (state.music) {
-      await startMusicIfNeeded();
-    } else {
-      stopMusic();
-      setStatus("音乐已关闭。");
-    }
-  });
+  if (els.musicToggle.dataset.boundMusic !== "1") {
+    els.musicToggle.dataset.boundMusic = "1";
+    els.musicToggle.addEventListener("click", async (e) => {
+      e.preventDefault();
+      await unlockAudio();
+
+      // Toggle state first so label changes immediately
+      state.music = !state.music;
+      save("music", state.music);
+      updateMusicUI();
+
+      if (state.music) {
+        // Try to start. If blocked, keep '开' but show guidance.
+        await startMusicIfNeeded();
+        setStatus("音乐已开启。若无声，请再点一下棋盘/按钮（浏览器需要手势才能播放）。");
+      } else {
+        stopMusic();
+        setStatus("音乐已关闭。");
+      }
+    });
+  }
 }
 
     function openRules(){
@@ -978,36 +992,7 @@ setupExtrasFullscreenRules();
 
     
 
-// --- DEFENSIVE_REBIND: ensure fullscreen & music buttons always respond ---
-// Some browsers can keep old JS in cache; we also guard against duplicate binding.
-(function ensureCriticalButtons(){
-  // Fullscreen buttons
-  const fsBtns = document.querySelectorAll('[data-fullscreen-btn]');
-  fsBtns.forEach((btn) => {
-    if (btn.dataset.boundFullscreen === "1") return;
-    btn.dataset.boundFullscreen = "1";
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      try { toggleFullscreen(); } catch (_e) { /* ignore */ }
-    });
-  });
 
-  // Music button
-  if (els.musicToggle && els.musicToggle.dataset.boundMusic !== "1") {
-    els.musicToggle.dataset.boundMusic = "1";
-    els.musicToggle.addEventListener("click", async (e) => {
-      e.preventDefault();
-      try{
-        await unlockAudio();
-        state.music = !state.music;
-        save("music", state.music);
-        updateMusicUI();
-        if (state.music) await startMusicIfNeeded();
-        else { stopMusic(); setStatus("音乐已关闭。"); }
-      }catch(_e){}
-    });
-  }
-})();
 newGame();
     autoScrollToBoardOnce();
     return { state, newGame, applyConfig };
